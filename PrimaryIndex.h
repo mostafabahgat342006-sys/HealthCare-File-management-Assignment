@@ -19,3 +19,6 @@ public:
     void rebuildAppointments(string filename);
     void print();
 };
+
+void rebuildDoctorIndex(PrimaryIndex& doctorIndex, string filename);
+void rebuildAppointmentIndex(PrimaryIndex& appointmentIndex, string filename);

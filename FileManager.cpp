@@ -105,40 +105,79 @@ int writeAppointment(Appointment appointment, string filename)
     return offset;
 }
 
+bool writeDoctorAt(int offset, const Doctor& doctor, string filename)
+{
+    fstream file(filename, ios::in | ios::out | ios::binary);
+    if (!file)
+        return false;
+
+    file.seekp(offset);
+    file.write((const char*)&doctor, sizeof(Doctor));
+    bool success = (bool)file;
+    file.close();
+    return success;
+}
+
+bool writeAppointmentAt(int offset, const Appointment& appointment, string filename)
+{
+    fstream file(filename, ios::in | ios::out | ios::binary);
+    if (!file)
+        return false;
+
+    file.seekp(offset);
+    file.write((const char*)&appointment, sizeof(Appointment));
+    bool success = (bool)file;
+    file.close();
+    return success;
+}
+
+bool readDoctor(int offset, Doctor& doctor, string filename)
+{
+    doctor = {};
+    ifstream file(filename, ios::binary);
+    if (!file)
+        return false;
+
+    file.seekg(offset);
+    file.read((char*)&doctor, sizeof(Doctor));
+    bool success = (bool)file;
+    file.close();
+    return success;
+}
+
 Doctor readDoctor(int offset, string filename)
 {
     Doctor doctor = {};
+    readDoctor(offset, doctor, filename);
+    return doctor;
+}
 
+bool readAppointment(int offset, Appointment& appointment, string filename)
+{
+    appointment = {};
     ifstream file(filename, ios::binary);
+    if (!file)
+        return false;
 
     file.seekg(offset);
-
-    file.read((char*)&doctor, sizeof(Doctor));
-
+    file.read((char*)&appointment, sizeof(Appointment));
+    bool success = (bool)file;
     file.close();
-
-    return doctor;
+    return success;
 }
 
 Appointment readAppointment(int offset, string filename)
 {
-
     Appointment appointment = {};
-
-    ifstream file(filename, ios::binary);
-
-    file.seekg(offset);
-
-    file.read((char*)&appointment, sizeof(Appointment));
-
-    file.close();
-
+    readAppointment(offset, appointment, filename);
     return appointment;
 }
 
-void deleteDoctorAt(int offset, string filename)
+bool deleteDoctorAt(int offset, string filename)
 {
     fstream file(filename, ios::in | ios::out | ios::binary);
+    if (!file)
+        return false;
 
     int head;
     file.seekg(0);
@@ -155,12 +194,14 @@ void deleteDoctorAt(int offset, string filename)
     file.write((char*)&offset, sizeof(int));
 
     file.close();
+    return true;
 }
 
-void deleteAppointmentAt(int offset, string filename)
+bool deleteAppointmentAt(int offset, string filename)
 {
-
     fstream file(filename, ios::in | ios::out | ios::binary);
+    if (!file)
+        return false;
 
     int head;
     file.seekg(0);
@@ -177,4 +218,5 @@ void deleteAppointmentAt(int offset, string filename)
     file.write((char*)&offset, sizeof(int));
 
     file.close();
+    return true;
 }

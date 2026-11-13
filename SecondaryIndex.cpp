@@ -236,8 +236,10 @@ void SecondaryIndex::print()
 
 static string fieldToString(const char* s, size_t n)
 {
-    const void* z = memchr(s, 0, n);
-    return string(s, z ? (size_t)((const char*)z - s) : n);
+    int end = (int)n;
+    while (end > 0 && (s[end - 1] == ' ' || s[end - 1] == '\0'))
+        --end;
+    return string(s, end);
 }
 
 template <typename Rec, typename KeyFn>

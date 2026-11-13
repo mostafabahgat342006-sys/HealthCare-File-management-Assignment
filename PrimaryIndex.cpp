@@ -30,55 +30,66 @@ int PrimaryIndex::search(string id)
     return -1;
 }
 
-void PrimaryIndex::insert(string id, int offset)
+bool PrimaryIndex::insert(string id, int offset)
 {
-
     int pos = 0;
 
-    while (pos < entries.size() && entries[pos].id < id)
+    while (pos < (int)entries.size() && entries[pos].id < id)
     {
         pos++;
     }
+
+    if (pos < (int)entries.size() && entries[pos].id == id)
+        return false;
 
     IndexEntry e;
     e.id = id;
     e.offset = offset;
 
     entries.insert(entries.begin() + pos, e);
+    return true;
 }
 
-void PrimaryIndex::remove(string id)
+bool PrimaryIndex::remove(string id)
 {
-
-    for (int i = 0; i < entries.size(); i++)
-        {
-
+    for (int i = 0; i < (int)entries.size(); i++)
+    {
         if (entries[i].id == id)
         {
             entries.erase(entries.begin() + i);
-            return;
+            return true;
         }
     }
+    return false;
 }
 
-void PrimaryIndex::updateKey(string oldId, string newId)
+bool PrimaryIndex::updateKey(string oldId, string newId)
 {
-
     int offset = search(oldId);
 
     if (offset == -1)
-        return;
+        return false;
 
     if (search(newId) != -1)
-        return;
+        return false;
 
     remove(oldId);
 
     insert(newId, offset);
+    return true;
+}
+
+static string cleanId(const char* s, int length)
+{
+    int end = length;
+    while (end > 0 && (s[end - 1] == ' ' || s[end - 1] == '\0'))
+        --end;
+    return string(s, end);
 }
 
 void rebuildDoctorIndex(PrimaryIndex& doctorIndex, string filename)
 {
+    doctorIndex.entries.clear();
 
     ifstream file(filename, ios::binary);
 
@@ -92,8 +103,7 @@ void rebuildDoctorIndex(PrimaryIndex& doctorIndex, string filename)
 
     while (true)
     {
-
-        offset = file.tellg();
+        offset = (int)file.tellg();
 
         file.read((char*)&doctor, sizeof(Doctor));
 
@@ -101,15 +111,16 @@ void rebuildDoctorIndex(PrimaryIndex& doctorIndex, string filename)
             break;
 
         if (doctor.id[0] != '*') {
-            doctorIndex.insert(doctor.id, offset);
+            doctorIndex.insert(cleanId(doctor.id, sizeof(doctor.id)), offset);
         }
     }
 
     file.close();
 }
 
-void rebuildAppointmentIndex(PrimaryIndex& appointmentIndex,string filename)
+void rebuildAppointmentIndex(PrimaryIndex& appointmentIndex, string filename)
 {
+    appointmentIndex.entries.clear();
 
     ifstream file(filename, ios::binary);
 
@@ -123,8 +134,7 @@ void rebuildAppointmentIndex(PrimaryIndex& appointmentIndex,string filename)
 
     while (true)
     {
-
-        offset = file.tellg();
+        offset = (int)file.tellg();
 
         file.read((char*)&appointment, sizeof(Appointment));
 
@@ -133,11 +143,21 @@ void rebuildAppointmentIndex(PrimaryIndex& appointmentIndex,string filename)
 
         if (appointment.id[0] != '*')
         {
-            appointmentIndex.insert(appointment.id, offset);
+            appointmentIndex.insert(cleanId(appointment.id, sizeof(appointment.id)), offset);
         }
     }
 
     file.close();
+}
+
+void PrimaryIndex::rebuildDoctors(string filename)
+{
+    rebuildDoctorIndex(*this, filename);
+}
+
+void PrimaryIndex::rebuildAppointments(string filename)
+{
+    rebuildAppointmentIndex(*this, filename);
 }
 
 void PrimaryIndex::print()
